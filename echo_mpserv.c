@@ -101,7 +101,6 @@ void set_context(SSL_CTX* ctx){
  * return : server socket
  */
 int create_listen(int port){
-    int state;
     int serv_sock;
     struct sockaddr_in serv_adr;
     struct sigaction act;
@@ -112,7 +111,7 @@ int create_listen(int port){
     act.sa_handler = read_childproc;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    state = sigaction(SIGCHLD, &act, 0);
+    int state = sigaction(SIGCHLD, &act, 0);
 
     serv_sock = socket(PF_INET, SOCK_STREAM, 0);
     memset(&serv_adr, 0, sizeof(serv_adr));

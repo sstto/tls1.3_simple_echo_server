@@ -1,27 +1,20 @@
-#ifndef TLS13_ECHO_EHCO_MPSERV_H
-#define TLS13_ECHO_EHCO_MPSERV_H
+#ifndef TLS13_ECHO_ECHO_CLIENT_H
+#define TLS13_ECHO_ECHO_CLIENT_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <string.h>
 #include <memory.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <netinet//in.h>
 #include <netdb.h>
+
 #include <openssl/rsa.h>
 #include <openssl/crypto.h>
+//#include <openssl/X509.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-
-#define BUF_SIZE 100
+#define BUF_SIZE 1024
 /*
  * 모든 알고리즘, 에러 메시지 불러오기;
  */
@@ -34,12 +27,10 @@ SSL_CTX *create_context();
  * set 타원곡선, set cert, set cert private key
  */
 void set_context(SSL_CTX* ctx);
-/*
- * return : server socket fd;
- */
-int create_listen(int port);
-
+void keylog_callback(const SSL* ssl, const char *line);
+size_t resolve_hostname(const char *host, const char *port, struct sockaddr_storage *addr);
+void configure_connection(SSL *ssl);
+void ShowCerts(SSL* ssl);
 void error_handling(char *message);
-void read_childproc(int sig);   // signal이 발생했을 때 실행
 
-#endif //TLS13_ECHO_EHCO_MPSERV_H
+#endif //TLS13_ECHO_ECHO_CLIENT_H
