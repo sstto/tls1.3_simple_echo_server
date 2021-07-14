@@ -1,113 +1,38 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <string.h>
-
-#include <memory.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <netinet//in.h>
-#include <netdb.h>
-
-#include <openssl/rsa.h>
-#include <openssl/crypto.h>
-//#include <openssl/X509.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-
-#define  HOME "./"
-#define CERTF HOME "server.crt"
-#define KEYF HOME "server.key"
-
-#define CHK_NULL(x) if((x) == NULL) exit(1)
-#define CHK_ERR(err,s) if((err) == -1){perror(s);exit(1);}
-#define CHK_SSL(err) if((err) == -1){ ERR_print_errors_fp(stderr);exit(2);}
-
-#define BUF_SIZE 100
-void error_handling(char *message);
-void read_childproc(int sig);   // signal이 발생했을 때 실행
-
+#include "ehco_mpserv.h"
 int main(int argc, char *argv[]){
-    int serv_sock, clnt_sock;
-    struct sockaddr_in serv_adr, clnt_adr;
-    const SSL_METHOD *method;
+    init_openssl();
 
-    SSL_CTX *ctx;
+    SSL_CTX *ctx = create_context();
 
-    SSL_load_error_strings();
-    OpenSSL_add_ssl_algorithms();
+    set_context(ctx);
 
-    SSL_CTX_set_ecdh_auto(ctx, 1);
-    method = SSLv23_server_method();
-
-    ctx = SSL_CTX_new(method);
-    if (!ctx) {
-        perror("Unable to create SSL context");
-        ERR_print_errors_fp(stderr);
-        exit(EXIT_FAILURE);
-    }
-    /* Set the key and cert */
-    if (SSL_CTX_use_certificate_file(ctx, "cert/CarolCert.pem", SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        exit(EXIT_FAILURE);
-    }
-
-    if (SSL_CTX_use_PrivateKey_file(ctx, "cert/CarolPriv.pem", SSL_FILETYPE_PEM) <= 0 ) {
-        ERR_print_errors_fp(stderr);
-        exit(EXIT_FAILURE);
-    }
-    pid_t pid;
-    // sigaction이란 signal 체이 발생할 때 act할 함수가 들어있는 구조체
-    struct sigaction act;
-    socklen_t adr_sz;
-    int str_len, state;
-    char buf[BUF_SIZE];
     if(argc != 2){
         printf("Usage : %s <port>\n", argv[0]);
     }
-
-    act.sa_handler = read_childproc;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    state = sigaction(SIGCHLD, &act, 0);
-
-    serv_sock = socket(PF_INET, SOCK_STREAM, 0);
-    memset(&serv_adr, 0, sizeof(serv_adr));
-    serv_adr.sin_family = AF_INET;
-    serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_adr.sin_port = htons(atoi(argv[1]));
-
-    // server 소켓과 주소정보를 바인
-    if(bind(serv_sock, (struct sockaddr*) &serv_adr, sizeof(serv_adr)) == -1){
-        error_handling("bind() error");
-    }
-    // 여기서 5는 대기할 수 있는 클라이언트 요청 수였나..
-    if(listen(serv_sock, 5) == -1){
-        error_handling("listen() error");
-    }
+    int serv_sock = create_listen(atoi(argv[1]));
 
     // 여러 클라이언트와 connect 시작
+    pid_t pid;
+    int clnt_sock;
+    struct sockaddr_in clnt_adr;
+    int str_len;
+    char buf[BUF_SIZE];
     while(1){
-        SSL *ssl;
-        adr_sz = sizeof(clnt_adr);
+        socklen_t adr_sz = sizeof(clnt_adr);
         clnt_sock = accept(serv_sock, (struct sockaddr*) &clnt_adr, &adr_sz);
-        if(clnt_sock == -1){
+        if(clnt_sock < 0){
             printf("continue~\n");
             continue;
         }else{
             puts("new client connected ...");
         }
 
-        ssl = SSL_new(ctx);
+        SSL* ssl = SSL_new(ctx);
         SSL_set_fd(ssl, clnt_sock);
 
         if(SSL_accept(ssl) <= 0){
             ERR_print_errors_fp(stderr);
+            error_handling("fail to accept TLS connection");
         }
 
         pid = fork();
@@ -137,7 +62,81 @@ int main(int argc, char *argv[]){
         }
     }
     close(serv_sock);
+    SSL_CTX_free(ctx);
+    EVP_cleanup();
     return 0;
+}
+/*
+ * 알고리즘, 에러 메시지들 불러오기;
+ */
+void init_openssl(){
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+}
+/*
+ * SSL 구조체를 생성, 통신 프로토콜 선택;
+ * return SSL_CTX* SSL 구조체;
+ */
+SSL_CTX *create_context(){
+    SSL_CTX* ctx = SSL_CTX_new(SSLv23_server_method());
+    if(!ctx) error_handling("fail to create ssl context");
+
+    SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
+    return ctx;
+}
+/*
+ * set ecdh curves automatically
+ * set cert and its private key
+ */
+void set_context(SSL_CTX* ctx){
+    if(!SSL_CTX_set_ecdh_auto(ctx, 1))
+        error_handling("fail to set ECDHE curves");
+    if(!SSL_CTX_use_certificate_file(ctx, "cert/CarolCert.pem", SSL_FILETYPE_PEM))
+        error_handling("fail to load cert");
+    if(!SSL_CTX_use_PrivateKey_file(ctx, "cert/CarolPriv.pem", SSL_FILETYPE_PEM))
+        error_handling("fail to load cert's private key");
+}
+/*
+ * create socket fd to listen
+ * return : server socket
+ */
+int create_listen(int port){
+    int state;
+    int serv_sock;
+    struct sockaddr_in serv_adr;
+    struct sigaction act;
+
+
+
+    // sigaction : signal이 발생할 때 act할 함수가 들어있는 구조체 생성 함수;
+    act.sa_handler = read_childproc;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    state = sigaction(SIGCHLD, &act, 0);
+
+    serv_sock = socket(PF_INET, SOCK_STREAM, 0);
+    memset(&serv_adr, 0, sizeof(serv_adr));
+    serv_adr.sin_family = AF_INET;
+    serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_adr.sin_port = htons(port);
+
+    if(serv_sock < 0)
+        error_handling("fail to create socket");
+
+    int enable = 1;
+    if(setsockopt(serv_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+        error_handling("SO_REUSEADDR failed");
+    }
+
+    if(bind(serv_sock, (struct sockaddr*) &serv_adr, sizeof(serv_adr)) < 0)// server 소켓과 주소정보를 바인딩;
+        error_handling("bind() error");
+
+    if(listen(serv_sock, 5) < 0) // 여기서 5는 대기할 수 있는 클라이언트 요청 수;
+        error_handling("listen() error");
+
+    printf("Listening on port %d\n", port);
+
+    return serv_sock;
 }
 
 void read_childproc(int sig){
