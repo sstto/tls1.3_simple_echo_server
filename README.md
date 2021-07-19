@@ -1,5 +1,5 @@
 # tls-multi-echo-server
-> Implement a TLS 1.2 multi echo server using openssl
+> Implement a TLS 1.3 multi echo server using openssl
 
 # Compile
 > gcc -o server echo_mpserv.c -lssl -lcrypto
