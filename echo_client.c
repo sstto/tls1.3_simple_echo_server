@@ -27,8 +27,11 @@ int main(int argc, char *argv[]){
         puts("connected...");
     }
 
+
     SSL* ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sock);
+
+//    printf("%s", SSL_get_version(ssl));
 
     configure_connection(ssl);
 
@@ -85,7 +88,7 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){
-    printf("%d\n", line);
+    printf("%s\n", line);
 }
 size_t resolve_hostname(const char *host, const char *port, struct sockaddr_storage *addr){
     struct addrinfo *res = 0;
