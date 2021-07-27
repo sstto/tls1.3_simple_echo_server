@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
 
 
     // only show cert
-    ShowCerts(ssl);
+//    ShowCerts(ssl);
     while(1){
         fputs("Input message(Q to quit): ", stdout);
         fgets(message, BUF_SIZE, stdin);
@@ -102,28 +102,29 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
 void configure_connection(SSL *ssl){
     SSL_set_tlsext_host_name(ssl, "youngin.net");
     SSL_set_connect_state(ssl);
+    printf("HADNSHAKE\n");
     if(SSL_do_handshake(ssl) <= 0){
         ERR_print_errors_fp(stderr);
         error_handling("fail to do handshake");
     }
 }
-void ShowCerts(SSL* ssl)
-{
-    X509 *cert;
-    char *line;
-    cert = SSL_get_peer_certificate(ssl);
-    if ( cert != NULL )
-    {
-        printf("Server certificates:\n");
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        printf("Subject: %s\n", line); free(line);
-        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        printf("Issuer: %s\n", line); free(line);
-        X509_free(cert);
-    }
-    else
-        printf("No certificates.\n");
-}
+//void ShowCerts(SSL* ssl)
+//{
+//    X509 *cert;
+//    char *line;
+//    cert = SSL_get_peer_certificate(ssl);
+//    if ( cert != NULL )
+//    {
+//        printf("Server certificates:\n");
+//        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+//        printf("Subject: %s\n", line); free(line);
+//        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+//        printf("Issuer: %s\n", line); free(line);
+//        X509_free(cert);
+//    }
+//    else
+//        printf("No certificates.\n");
+//}
 void error_handling(char *message){
     fputs(message, stderr);
     fputc('\n', stderr);

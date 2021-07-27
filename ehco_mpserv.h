@@ -14,12 +14,30 @@
 #include <sys/types.h>
 #include <netinet//in.h>
 #include <netdb.h>
-#include <openssl/rsa.h>
-#include <openssl/crypto.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 
+//#include <openssl/rsa.h>
+//#include <openssl/crypto.h>
+//#include <openssl/pem.h>
+//#include <openssl/ssl.h>
+//#include <openssl/err.h>
+//#include <openssl/bio.h>
+
+//#include "openssl/ssl/ssl_local.h"
+//#include "openssl/e_os.h"
+
+//#include "openssl/bio.h"
+//#include "openssl/ssl.h"
+//#include "openssl/err.h"
+
+#include "/usr/local/include/openssl/bio.h"
+#include "/usr/local/include/openssl/ssl.h"
+#include "/usr/local/include/openssl/err.h"
+
+//#include "../openssl/crypto.h"
+//#include <openssl/X509.h>
+//#include "../openssl/pem.h"
+//#include "../openssl/ssl.h"
+//#include "../openssl/err.h"
 
 #define BUF_SIZE 100
 /*

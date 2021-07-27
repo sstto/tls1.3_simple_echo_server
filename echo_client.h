@@ -7,12 +7,26 @@
 #include <netinet//in.h>
 #include <netdb.h>
 
-#include <openssl/rsa.h>
-#include <openssl/crypto.h>
-//#include <openssl/X509.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+//#include <openssl/rsa.h>
+//#include <openssl/crypto.h>
+//#include <openssl/pem.h>
+//#include <openssl/ssl.h>
+//#include <openssl/err.h>
+
+//#include <openssl/ssl.h>
+//#include <openssl/err.h>
+//#include <openssl/bio.h>
+//
+//#include "openssl/bio.h"
+//#include "openssl/ssl.h"
+//#include "openssl/err.h"
+
+//#include "../openssl/ssl/ssl_local.h"
+//#include "../openssl/e_os.h"
+//
+#include "/usr/local/include/openssl/bio.h"
+#include "/usr/local/include/openssl/ssl.h"
+#include "/usr/local/include/openssl/err.h"
 
 #define BUF_SIZE 1024
 /*
@@ -30,7 +44,7 @@ void set_context(SSL_CTX* ctx);
 void keylog_callback(const SSL* ssl, const char *line);
 size_t resolve_hostname(const char *host, const char *port, struct sockaddr_storage *addr);
 void configure_connection(SSL *ssl);
-void ShowCerts(SSL* ssl);
+//void ShowCerts(SSL* ssl);
 void error_handling(char *message);
 
 #endif //TLS13_ECHO_ECHO_CLIENT_H
