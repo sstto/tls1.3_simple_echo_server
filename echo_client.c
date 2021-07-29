@@ -34,7 +34,6 @@ int main(int argc, char *argv[]){
 //    printf("%s", SSL_get_version(ssl));
 
     configure_connection(ssl);
-
     char message[BUF_SIZE];
     int str_len;
 
@@ -74,7 +73,11 @@ void init_openssl(){
 SSL_CTX *create_context(){
     SSL_CTX* ctx = SSL_CTX_new(SSLv23_client_method());
     if(!ctx) error_handling("fail to create ssl context");
-
+    /*
+     * ssl_check_allowed_versions(ctx->min_proto_version, larg) : larg가 최고 proto로 설정;
+               && ssl_set_version_bound(ctx->method->version, (int)larg,
+                                        &ctx->max_proto_version);
+     */
     SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
     return ctx;
 }
@@ -102,7 +105,7 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
 void configure_connection(SSL *ssl){
     SSL_set_tlsext_host_name(ssl, "youngin.net");
     SSL_set_connect_state(ssl);
-    printf("HADNSHAKE\n");
+    printf("HANDSHAKE\n");
     if(SSL_do_handshake(ssl) <= 0){
         ERR_print_errors_fp(stderr);
         error_handling("fail to do handshake");
