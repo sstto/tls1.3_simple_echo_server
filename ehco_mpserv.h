@@ -55,6 +55,7 @@ void set_context(SSL_CTX* ctx);
 /*
  * return : server socket fd;
  */
+void keylog_callback(const SSL* ssl, const char *line);
 int create_listen(int port);
 
 void error_handling(char *message);

@@ -95,6 +95,14 @@ void set_context(SSL_CTX* ctx){
         error_handling("fail to load cert");
     if(!SSL_CTX_use_PrivateKey_file(ctx, "cert/CarolPriv.pem", SSL_FILETYPE_PEM))
         error_handling("fail to load cert's private key");
+
+    SSL_CTX_set_keylog_callback(ctx, keylog_callback);
+}
+
+void keylog_callback(const SSL* ssl, const char *line){
+    printf("==============================================\n");
+    printf("%s\n", line);
+    printf("==============================================\n");
 }
 /*
  * create socket fd to listen

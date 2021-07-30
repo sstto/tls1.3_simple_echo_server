@@ -91,7 +91,9 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){
+    printf("==============================================\n");
     printf("%s\n", line);
+    printf("==============================================\n");
 }
 size_t resolve_hostname(const char *host, const char *port, struct sockaddr_storage *addr){
     struct addrinfo *res = 0;
