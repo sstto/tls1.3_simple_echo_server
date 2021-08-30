@@ -45,6 +45,7 @@ int main(int argc, char *argv[]){
             close(serv_sock);
             while((str_len = SSL_read(ssl,buf, BUF_SIZE)) != 0){
                 // str_len은 read한 byte 수
+                printf("buf : %s", buf);
                 if(!strncmp(buf, "hello\n",str_len)){
                     strcpy(buf, "worldisforyou\n");
                     SSL_write(ssl, buf, strlen(buf));
@@ -102,7 +103,6 @@ void set_context(SSL_CTX* ctx){
 void keylog_callback(const SSL* ssl, const char *line){
     printf("==============================================\n");
     printf("%s\n", line);
-    printf("==============================================\n");
 }
 /*
  * create socket fd to listen

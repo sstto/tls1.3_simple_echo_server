@@ -49,7 +49,10 @@ int main(int argc, char *argv[]){
         }
 
         SSL_write(ssl, message, strlen(message));
-        str_len = SSL_read(ssl, message, BUF_SIZE-1);
+        if((str_len = SSL_read(ssl, message, BUF_SIZE-1))<=0){
+        	printf("error\n");
+        }
+        
         message[str_len] = 0;
         printf("Message from server: %s", message);
     }
@@ -93,7 +96,6 @@ void set_context(SSL_CTX *ctx){
 void keylog_callback(const SSL* ssl, const char *line){
     printf("==============================================\n");
     printf("%s\n", line);
-    printf("==============================================\n");
 }
 size_t resolve_hostname(const char *host, const char *port, struct sockaddr_storage *addr){
     struct addrinfo *res = 0;
@@ -107,7 +109,6 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
 void configure_connection(SSL *ssl){
     SSL_set_tlsext_host_name(ssl, "youngin.net");
     SSL_set_connect_state(ssl);
-    printf("HANDSHAKE\n");
     if(SSL_do_handshake(ssl) <= 0){
         ERR_print_errors_fp(stderr);
         error_handling("fail to do handshake");
