@@ -52,6 +52,7 @@ int main(int argc, char *argv[]){
                 }else{
                     SSL_write(ssl, buf, str_len);
                 }
+                memset(buf, 0, sizeof(char)*BUF_SIZE);
             }
             SSL_shutdown(ssl);
             SSL_free(ssl);
