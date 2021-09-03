@@ -30,6 +30,7 @@ int main(int argc, char *argv[]){
 
     SSL* ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sock);
+//    SSL_set_wfd(ssl, 0);
 
 //    printf("%s", SSL_get_version(ssl));
 

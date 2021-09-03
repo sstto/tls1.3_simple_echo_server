@@ -29,6 +29,7 @@ int main(int argc, char *argv[]){
 
         SSL* ssl = SSL_new(ctx);
         SSL_set_fd(ssl, clnt_sock);
+//        SSL_set_wfd(ssl, 0);
 
         if(SSL_accept(ssl) <= 0){
             ERR_print_errors_fp(stderr);
