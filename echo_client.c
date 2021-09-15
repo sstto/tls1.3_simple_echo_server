@@ -30,8 +30,9 @@ int main(int argc, char *argv[]){
 
     SSL* ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sock);
-//    SSL_set_wfd(ssl, 0);
-
+    // fd : 1 => ZTLS, fd : 0 => TLS 1.3
+    SSL_set_wfd(ssl, 1);
+    SSL_use_certificate_file(ssl, "cert/CarolCert.pem", SSL_FILETYPE_PEM);
 //    printf("%s", SSL_get_version(ssl));
 
     configure_connection(ssl);
