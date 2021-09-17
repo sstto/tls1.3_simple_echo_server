@@ -33,6 +33,13 @@ int main(int argc, char *argv[]){
     // fd : 1 => ZTLS, fd : 0 => TLS 1.3
     SSL_set_wfd(ssl, 1);
     SSL_use_certificate_file(ssl, "cert/CarolCert.pem", SSL_FILETYPE_PEM);
+    if(!SSL_CTX_use_PrivateKey_file(ctx, "cert/CarolPriv.pem", SSL_FILETYPE_PEM))
+        error_handling("fail to load cert's private key");
+    SSL_export_keying_material(ssl, NULL,
+                               0,
+                              NULL,
+                              0,
+                              NULL, 0, 0);
 //    printf("%s", SSL_get_version(ssl));
 
     configure_connection(ssl);
@@ -96,8 +103,8 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){
-    printf("==============================================\n");
-    printf("%s\n", line);
+//    printf("==============================================\n");
+//    printf("%s\n", line);
 }
 size_t resolve_hostname(const char *host, const char *port, struct sockaddr_storage *addr){
     struct addrinfo *res = 0;

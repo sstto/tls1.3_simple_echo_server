@@ -107,8 +107,8 @@ void set_context(SSL_CTX* ctx){
 }
 
 void keylog_callback(const SSL* ssl, const char *line){
-    printf("==============================================\n");
-    printf("%s\n", line);
+//    printf("==============================================\n");
+//    printf("%s\n", line);
 }
 /*
  * create socket fd to listen
