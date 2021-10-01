@@ -1,7 +1,34 @@
 #include "echo_client.h"
 
-
 int main(int argc, char *argv[]){
+    char msg[BUF_SIZE];
+    FILE *fp;
+    
+    /*
+     * dns info
+     */
+    dns_info.dns_cache_id  = 0;
+
+    fp = fopen("dns/keyshare/pubKey.pem", "rb");
+    PEM_read_PUBKEY(fp, &dns_info.skey, NULL, NULL);
+    fclose(fp);
+
+    fp = fopen("dns/cert/CarolCert.pem", "rb");
+    PEM_read_X509(fp, &dns_info.cert, NULL, NULL);
+    fclose(fp);
+
+    fp = fopen("dns/cert_verify/sign.txt.sha256.base64", "rb");
+    fread(dns_info.cert_verify, 1, BUF_SIZE, fp);
+    fclose(fp);
+
+    // read original msg
+    fp = fopen("msg.txt", "r");
+    fread(msg, 1, BUF_SIZE, fp);
+    fclose(fp);
+
+    /*
+     * tcp/ip
+     */
     init_openssl();
 
     SSL_CTX *ctx = create_context();
@@ -27,28 +54,31 @@ int main(int argc, char *argv[]){
         puts("connected...");
     }
 
-
     SSL* ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sock);
-    // fd : 1 => ZTLS, fd : 0 => TLS 1.3
-    SSL_set_wfd(ssl, 1);
-    SSL_use_certificate_file(ssl, "cert/CarolCert.pem", SSL_FILETYPE_PEM);
-    if(!SSL_CTX_use_PrivateKey_file(ctx, "cert/CarolPriv.pem", SSL_FILETYPE_PEM))
-        error_handling("fail to load cert's private key");
-    SSL_export_keying_material(ssl, NULL,
+
+    SSL_set_wfd(ssl, 1); // fd : 1 => ZTLS, fd : 0 => TLS 1.3
+
+    /*
+     * set dns info
+     */
+    SSL_use_PrivateKey(ssl, dns_info.skey); // set server's keyshare
+    SSL_use_certificate(ssl, dns_info.cert); // set sever's cert
+
+    SSL_export_keying_material(ssl, (unsigned char*)msg,
                                0,
                               NULL,
                               0,
-                              NULL, 0, 0);
-//    printf("%s", SSL_get_version(ssl));
+                              dns_info.cert_verify, BUF_SIZE, 0); // cert verify
 
+    /*
+     * handshake start
+     */
     configure_connection(ssl);
     char message[BUF_SIZE];
     int str_len;
 
 
-    // only show cert
-//    ShowCerts(ssl);
     while(1){
         fputs("Input message(Q to quit): ", stdout);
         fgets(message, BUF_SIZE, stdin);
@@ -61,7 +91,7 @@ int main(int argc, char *argv[]){
         if((str_len = SSL_read(ssl, message, BUF_SIZE-1))<=0){
         	printf("error\n");
         }
-        
+
         message[str_len] = 0;
         printf("Message from server: %s", message);
     }
@@ -123,23 +153,6 @@ void configure_connection(SSL *ssl){
         error_handling("fail to do handshake");
     }
 }
-//void ShowCerts(SSL* ssl)
-//{
-//    X509 *cert;
-//    char *line;
-//    cert = SSL_get_peer_certificate(ssl);
-//    if ( cert != NULL )
-//    {
-//        printf("Server certificates:\n");
-//        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-//        printf("Subject: %s\n", line); free(line);
-//        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-//        printf("Issuer: %s\n", line); free(line);
-//        X509_free(cert);
-//    }
-//    else
-//        printf("No certificates.\n");
-//}
 void error_handling(char *message){
     fputs(message, stderr);
     fputc('\n', stderr);

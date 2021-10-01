@@ -6,7 +6,8 @@
 #include <sys/types.h>
 #include <netinet//in.h>
 #include <netdb.h>
-
+#include <string.h>
+#include <stdio.h>
 //#include <openssl/rsa.h>
 //#include <openssl/crypto.h>
 //#include <openssl/pem.h>
@@ -28,7 +29,14 @@
 #include "/usr/local/include/openssl/ssl.h"
 #include "/usr/local/include/openssl/err.h"
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 100000
+
+struct DNS_info{
+    uint32_t dns_cache_id;
+    EVP_PKEY *skey; // server's keyshare
+    X509* cert;
+    unsigned char cert_verify[BUF_SIZE];
+} dns_info;
 /*
  * 모든 알고리즘, 에러 메시지 불러오기;
  */

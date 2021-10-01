@@ -98,9 +98,9 @@ SSL_CTX *create_context(){
 void set_context(SSL_CTX* ctx){
     if(!SSL_CTX_set_ecdh_auto(ctx, 1))
         error_handling("fail to set ECDHE curves");
-    if(!SSL_CTX_use_certificate_file(ctx, "cert/CarolCert.pem", SSL_FILETYPE_PEM))
+    if(!SSL_CTX_use_certificate_file(ctx, "dns/cert/CarolCert.pem", SSL_FILETYPE_PEM))
         error_handling("fail to load cert");
-    if(!SSL_CTX_use_PrivateKey_file(ctx, "cert/CarolPriv.pem", SSL_FILETYPE_PEM))
+    if(!SSL_CTX_use_PrivateKey_file(ctx, "dns/cert/CarolPriv.pem", SSL_FILETYPE_PEM))
         error_handling("fail to load cert's private key");
 
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
