@@ -34,8 +34,8 @@
 struct DNS_info{
     uint32_t dns_cache_id;
     EVP_PKEY *skey; // server's keyshare
-    X509* cert;
-    unsigned char cert_verify[BUF_SIZE];
+    X509* cert; // server's cert
+    unsigned char cert_verify[BUF_SIZE]; // signature
 } dns_info;
 /*
  * 모든 알고리즘, 에러 메시지 불러오기;

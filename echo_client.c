@@ -2,19 +2,29 @@
 
 int main(int argc, char *argv[]){
     char msg[BUF_SIZE];
+    char keyshare[BUF_SIZE];
+    char cert[BUF_SIZE];
     FILE *fp;
-    
+
     /*
      * dns info
      */
-    dns_info.dns_cache_id  = 0;
+    dns_info.dns_cache_id  = 10000;
 
     fp = fopen("dns/keyshare/pubKey.pem", "rb");
     PEM_read_PUBKEY(fp, &dns_info.skey, NULL, NULL);
     fclose(fp);
 
+    fp = fopen("dns/keyshare/pubKey.pem", "rb");
+    fread(keyshare, 1, BUF_SIZE, fp);
+    fclose(fp);
+
     fp = fopen("dns/cert/CarolCert.pem", "rb");
     PEM_read_X509(fp, &dns_info.cert, NULL, NULL);
+    fclose(fp);
+
+    fp = fopen("dns/cert/CarolCert.pem", "rb");
+    fread(cert, 1, BUF_SIZE, fp);
     fclose(fp);
 
     fp = fopen("dns/cert_verify/sign.txt.sha256.base64", "rb");
@@ -22,9 +32,18 @@ int main(int argc, char *argv[]){
     fclose(fp);
 
     // read original msg
-    fp = fopen("msg.txt", "r");
-    fread(msg, 1, BUF_SIZE, fp);
-    fclose(fp);
+//    fp = fopen("msg.txt", "r");
+//    fread(msg, 1, BUF_SIZE, fp);
+//    fclose(fp);
+//    printf("%s\n", msg);
+
+    /*
+     * construct msg
+     */
+    sprintf(msg, "%u", dns_info.dns_cache_id);
+    strcat(msg, keyshare);
+    strcat(msg, cert);
+    strcat(msg, "\n");
 
     /*
      * tcp/ip
