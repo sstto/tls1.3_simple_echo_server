@@ -147,7 +147,8 @@ SSL_CTX *create_context(){
  * set version
  */
 void set_context(SSL_CTX *ctx){
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+    SSL_CTX_load_verify_locations(ctx, "./dns/cert/CarolCert.pem", "./dns/cert/");
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // SSL_VERIFY_NONE
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
