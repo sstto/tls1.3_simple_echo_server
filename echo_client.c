@@ -2,49 +2,15 @@
 
 int main(int argc, char *argv[]){
     char msg[BUF_SIZE];
-    char keyshare[BUF_SIZE];
-    char cert[BUF_SIZE];
-    FILE *fp;
 
     /*
      * dns info
      */
-    dns_info.dns_cache_id  = 10000;
-
-    fp = fopen("dns/keyshare/pubKey.pem", "rb");
-    PEM_read_PUBKEY(fp, &dns_info.skey, NULL, NULL);
-    fclose(fp);
-
-    fp = fopen("dns/keyshare/pubKey.pem", "rb");
-    fread(keyshare, 1, BUF_SIZE, fp);
-    fclose(fp);
-
-    fp = fopen("dns/cert/CarolCert.pem", "rb");
-    PEM_read_X509(fp, &dns_info.cert, NULL, NULL);
-    fclose(fp);
-
-    fp = fopen("dns/cert/CarolCert.pem", "rb");
-    fread(cert, 1, BUF_SIZE, fp);
-    fclose(fp);
-
-    fp = fopen("dns/cert_verify/sign.txt.sha256.base64", "rb");
-    fread(dns_info.cert_verify, 1, BUF_SIZE, fp);
-    fclose(fp);
-
-    // read original msg
-//    fp = fopen("msg.txt", "r");
-//    fread(msg, 1, BUF_SIZE, fp);
-//    fclose(fp);
-//    printf("%s\n", msg);
-
+    load_dns_info(&dns_info);
     /*
      * construct msg
      */
-    sprintf(msg, "%u", dns_info.dns_cache_id);
-    strcat(msg, keyshare);
-    strcat(msg, cert);
-    strcat(msg, "\n");
-
+    construct_msg(msg);
     /*
      * tcp/ip
      */
@@ -126,6 +92,47 @@ int main(int argc, char *argv[]){
 void init_openssl(){
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
+}
+
+void load_dns_info(struct DNS_info* dp){
+    FILE *fp;
+    dp->DNSCacheInfo.validity_period_not_before = 0;
+    dp->DNSCacheInfo.validity_period_not_after = 0;
+    dp->DNSCacheInfo.dns_cache_id  = 10000;
+
+    fp = fopen("dns/keyshare/pubKey.pem", "rb");
+    PEM_read_PUBKEY(fp, &(dp->skey), NULL, NULL);
+    fclose(fp);
+
+    fp = fopen("dns/cert/CarolCert.pem", "rb");
+    PEM_read_X509(fp, &(dp->cert), NULL, NULL);
+    fclose(fp);
+
+    fp = fopen("dns/cert_verify/sign.txt.sha256.base64", "rb");
+    fread(&(dp->cert_verify), 1, BUF_SIZE, fp);
+    fclose(fp);
+
+    Extension.extension_data = 0;
+    Extension.extension_data = 0;
+}
+
+void construct_msg(char* msg){
+    char keyshare[BUF_SIZE];
+    char cert[BUF_SIZE];
+    FILE *fp;
+
+    fp = fopen("dns/keyshare/pubKey.pem", "rb");
+    fread(keyshare, 1, BUF_SIZE, fp);
+    fclose(fp);
+
+    fp = fopen("dns/cert/CarolCert.pem", "rb");
+    fread(cert, 1, BUF_SIZE, fp);
+    fclose(fp);
+
+    sprintf(msg, "%u", dns_info.DNSCacheInfo.dns_cache_id);
+    strcat(msg, keyshare);
+    strcat(msg, cert);
+    strcat(msg, "\n");
 }
 /*
  * SSL 구조체를 생성, 통신 프로토콜 선택;
