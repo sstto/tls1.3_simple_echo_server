@@ -2,15 +2,26 @@
 
 int main(int argc, char *argv[]){
     char msg[BUF_SIZE];
+    char *pos_dns, *pos_cert_verify;
+
+    // load string
+    FILE* fp;
+    fp = fopen("dns info.txt", "rb");
+    fread(msg, 1, BUF_SIZE, fp);
+    fclose(fp);
 
     /*
-     * dns info
+     * load dns info using ***string*** msg!
      */
-    load_dns_info(&dns_info);
+    load_dns_info(&dns_info, msg);
     /*
      * construct msg
      */
-    construct_msg(msg);
+    pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
+    pos_cert_verify = strstr(msg, "-----BEGIN CERTIFICATE VERIFY-----");
+    msg[pos_cert_verify-pos_dns] = '\0';
+    strcat(msg, "\n");
+
     /*
      * tcp/ip
      */
@@ -94,26 +105,71 @@ void init_openssl(){
     OpenSSL_add_all_algorithms();
 }
 
-void load_dns_info(struct DNS_info* dp){
+void load_dns_info(struct DNS_info* dp, char* msg){
     FILE *fp;
-    dp->DNSCacheInfo.validity_period_not_before = 0;
-    dp->DNSCacheInfo.validity_period_not_after = 0;
-    dp->DNSCacheInfo.dns_cache_id  = 10000;
+    BIO *bio_key, *bio_cert;
+    char dns_cache_info[BUF_SIZE];
+    char encrypted_extension[BUF_SIZE];
+    char keyshare[BUF_SIZE];
+    char cert[BUF_SIZE];
+    char cert_verify[BUF_SIZE];
+    char* pos_dns, *pos_ee, *pos_key, *pos_cert, *pos_cert_verify, *pos_end;
+    char *tmp;
+    int size_ee;
 
-    fp = fopen("dns/keyshare/pubKey.pem", "rb");
-    PEM_read_PUBKEY(fp, &(dp->skey), NULL, NULL);
-    fclose(fp);
+    pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
+    pos_ee = strstr(msg,"-----BEGIN ENCRYPTED EXTENSIONS-----");
+    pos_key = strstr(msg, "-----BEGIN PUBLIC KEY-----");
+    pos_cert = strstr(msg, "-----BEGIN CERTIFICATE-----");
+    pos_cert_verify = strstr(msg, "-----BEGIN CERTIFICATE VERIFY-----");
+    pos_end = strstr(msg, "-----END CERTIFICATE VERIFY-----");
 
-    fp = fopen("dns/cert/CarolCert.pem", "rb");
-    PEM_read_X509(fp, &(dp->cert), NULL, NULL);
-    fclose(fp);
+    strcpy(dns_cache_info, pos_dns);
+    dns_cache_info[pos_ee-pos_dns] = '\0';
 
-    fp = fopen("dns/cert_verify/sign.txt.sha256.base64", "rb");
-    fread(&(dp->cert_verify), 1, BUF_SIZE, fp);
-    fclose(fp);
+    strcpy(encrypted_extension, pos_ee);
+    encrypted_extension[pos_key-pos_ee] = '\0';
 
-    Extension.extension_data = 0;
-    Extension.extension_data = 0;
+    strcpy(keyshare, pos_key);
+    keyshare[pos_cert-pos_key] = '\0';
+
+    strcpy(cert, pos_cert);
+    cert[pos_cert_verify-pos_cert] = '\0';
+
+    strcpy(cert_verify, pos_cert_verify+34);
+    cert_verify[pos_end-pos_cert_verify-34] = '\0';
+
+    // load dns cache info
+    tmp = strtok(dns_cache_info, "\n");
+    tmp = strtok(NULL, "\n");
+    dp->DNSCacheInfo.validity_period_not_before = strtoull(tmp, NULL,0);
+    tmp = strtok(NULL, "\n");
+    dp->DNSCacheInfo.validity_period_not_after = strtoull(tmp, NULL,0);
+    tmp = strtok(NULL, "\n");
+    dp->DNSCacheInfo.dns_cache_id  = strtoul(tmp, NULL, 0);
+
+    // load encrypted extension
+    tmp = strtok(encrypted_extension, "\n");
+    tmp = strtok(NULL, "\n");
+    size_ee = strtoul(tmp, NULL, 0);
+    dp->encrypted_extensions.extension_type = malloc(sizeof(uint8_t)*size_ee);
+    dp->encrypted_extensions.extension_data = malloc(sizeof(uint16_t)*size_ee);
+    for(int i=0;i<=size_ee;i++){
+        tmp = strtok(NULL, "\n");
+        dp->encrypted_extensions.extension_type[i] = (uint8_t)strtoul(tmp, NULL, 0);
+        tmp = strtok(NULL, "\n");
+        dp->encrypted_extensions.extension_data[i] = strtoul(tmp, NULL, 0);
+    }
+
+    bio_key = BIO_new(BIO_s_mem());
+    BIO_puts(bio_key, keyshare);
+    PEM_read_bio_PUBKEY(bio_key, &(dp->skey), NULL, NULL);
+
+    bio_cert = BIO_new(BIO_s_mem());
+    BIO_puts(bio_cert, cert);
+    PEM_read_bio_X509(bio_cert, &(dp->cert), NULL, NULL);
+
+    strcpy((char*)dp->cert_verify, cert_verify);
 }
 
 void construct_msg(char* msg){

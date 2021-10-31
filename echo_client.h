@@ -8,7 +8,6 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
 //#include <openssl/rsa.h>
 //#include <openssl/crypto.h>
 //#include <openssl/pem.h>
@@ -34,26 +33,26 @@
 
 struct DNS_info{
     struct {
-        time_t validity_period_not_before;
-        time_t validity_period_not_after;
+        uint64_t validity_period_not_before;
+        uint64_t validity_period_not_after;
         uint32_t dns_cache_id;
     } DNSCacheInfo;
-    struct Extension* encrypted_extensions;
+    struct {
+        uint8_t *extension_type;
+        uint16_t *extension_data;
+    } encrypted_extensions;
     EVP_PKEY *skey; // server's keyshare
     X509* cert; // server's cert
     unsigned char cert_verify[BUF_SIZE]; // signature
 } dns_info;
 
-struct {
-    uint8_t extension_type;
-    uint16_t extension_data;
-} Extension;
+
 
 /*
  * 모든 알고리즘, 에러 메시지 불러오기;
  */
 void init_openssl();
-void load_dns_info(struct DNS_info* dns_info);
+void load_dns_info(struct DNS_info* dns_info, char* msg);
 void construct_msg(char* msg);
 
 /*
