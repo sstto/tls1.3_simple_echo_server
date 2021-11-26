@@ -150,6 +150,12 @@ void load_dns_info(struct DNS_info* dp, char* msg){
     tmp = strtok(NULL, "\n");
     dp->DNSCacheInfo.dns_cache_id  = strtoul(tmp, NULL, 0);
 
+    // Check timestamp Valid
+    if(dp->DNSCacheInfo.validity_period_not_before < time(NULL) && dp->DNSCacheInfo.validity_period_not_after > time(NULL)){
+        printf("Valid Period\n");
+    }else{
+        printf("Not Valid Period\n");
+    }
     // load encrypted extension
     tmp = strtok(encrypted_extension, "\n");
     tmp = strtok(NULL, "\n");
