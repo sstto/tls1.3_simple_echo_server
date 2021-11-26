@@ -1,27 +1,29 @@
 #include "echo_client.h"
+int DNS = 1;
 
 int main(int argc, char *argv[]){
     char msg[BUF_SIZE];
     char *pos_dns, *pos_cert_verify;
 
-    // load string
-    FILE* fp;
-    fp = fopen("dns info.txt", "rb");
-    fread(msg, 1, BUF_SIZE, fp);
-    fclose(fp);
+    if(DNS){
+        // load string
+        FILE* fp;
+        fp = fopen("dns info.txt", "rb");
+        fread(msg, 1, BUF_SIZE, fp);
+        fclose(fp);
 
-    /*
-     * load dns info using ***string*** msg!
-     */
-    load_dns_info(&dns_info, msg);
-    /*
-     * construct msg
-     */
-    pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
-    pos_cert_verify = strstr(msg, "-----BEGIN CERTIFICATE VERIFY-----");
-    msg[pos_cert_verify-pos_dns] = '\0';
-    strcat(msg, "\n");
-
+        /*
+         * load dns info using ***string*** msg!
+         */
+        load_dns_info(&dns_info, msg);
+        /*
+         * construct msg
+         */
+        pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
+        pos_cert_verify = strstr(msg, "-----BEGIN CERTIFICATE VERIFY-----");
+        msg[pos_cert_verify-pos_dns] = '\0';
+        strcat(msg, "\n");
+    }
     /*
      * tcp/ip
      */
@@ -53,7 +55,7 @@ int main(int argc, char *argv[]){
     SSL* ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sock);
 
-    SSL_set_wfd(ssl, 1); // fd : 1 => ZTLS, fd : 0 => TLS 1.3
+    SSL_set_wfd(ssl, DNS); // fd : 1 => ZTLS, fd : 0 => TLS 1.3
 
     /*
      * set dns info
