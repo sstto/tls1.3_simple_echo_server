@@ -1,5 +1,4 @@
 #include "ehco_mpserv.h"
-int DNS = 1;
 
 int main(int argc, char *argv[]){
     init_openssl();
@@ -31,10 +30,6 @@ int main(int argc, char *argv[]){
 
         SSL* ssl = SSL_new(ctx);
         SSL_set_fd(ssl, clnt_sock);
-
-        // fd : 1 => ZTLS, fd : 0 => TLS 1.3
-        SSL_set_wfd(ssl, DNS);
-
 
 
         if(SSL_accept(ssl) <= 0){

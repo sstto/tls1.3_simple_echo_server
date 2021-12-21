@@ -15,7 +15,10 @@ int main(int argc, char *argv[]){
         /*
          * load dns info using ***string*** msg!
          */
-        load_dns_info(&dns_info, msg);
+        if(load_dns_info(&dns_info, msg) == 0){
+            printf("load dns info");
+//            return 0;
+        }
         /*
          * construct msg
          */
@@ -28,6 +31,7 @@ int main(int argc, char *argv[]){
      * tcp/ip
      */
     init_openssl();
+
 
     SSL_CTX *ctx = create_context();
 
@@ -107,7 +111,7 @@ void init_openssl(){
     OpenSSL_add_all_algorithms();
 }
 
-void load_dns_info(struct DNS_info* dp, char* msg){
+int load_dns_info(struct DNS_info* dp, char* msg){
     FILE *fp;
     BIO *bio_key, *bio_cert;
     char dns_cache_info[BUF_SIZE];
@@ -155,6 +159,7 @@ void load_dns_info(struct DNS_info* dp, char* msg){
         printf("Valid Period\n");
     }else{
         printf("Not Valid Period\n");
+//        return 0;
     }
     // load encrypted extension
     tmp = strtok(encrypted_extension, "\n");
@@ -178,6 +183,7 @@ void load_dns_info(struct DNS_info* dp, char* msg){
     PEM_read_bio_X509(bio_cert, &(dp->cert), NULL, NULL);
 
     strcpy((char*)dp->cert_verify, cert_verify);
+    return 1;
 }
 
 void construct_msg(char* msg){
@@ -221,6 +227,8 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_load_verify_locations(ctx, "./dns/cert/CarolCert.pem", "./dns/cert/");
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // SSL_VERIFY_NONE
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
+    if(DNS)
+        SSL_CTX_add_custom_ext(ctx, 53, SSL_EXT_CLIENT_HELLO, NULL, NULL,NULL,NULL,NULL);
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){

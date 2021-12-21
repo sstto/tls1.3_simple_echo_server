@@ -52,7 +52,7 @@ struct DNS_info{
  * 모든 알고리즘, 에러 메시지 불러오기;
  */
 void init_openssl();
-void load_dns_info(struct DNS_info* dns_info, char* msg);
+int load_dns_info(struct DNS_info* dns_info, char* msg);
 void construct_msg(char* msg);
 
 /*
