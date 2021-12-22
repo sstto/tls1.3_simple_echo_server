@@ -60,6 +60,7 @@ int main(int argc, char *argv[]){
     SSL_set_fd(ssl, sock);
 
     SSL_set_wfd(ssl, DNS); // fd : 1 => ZTLS, fd : 0 => TLS 1.3
+    SSL_set_max_early_data(ssl, (&dns_info)->DNSCacheInfo.dns_cache_id); // set dns id
 
     /*
      * set dns info
@@ -153,7 +154,6 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     dp->DNSCacheInfo.validity_period_not_after = strtoull(tmp, NULL,0);
     tmp = strtok(NULL, "\n");
     dp->DNSCacheInfo.dns_cache_id  = strtoul(tmp, NULL, 0);
-
     // Check timestamp Valid
     if(dp->DNSCacheInfo.validity_period_not_before < time(NULL) && dp->DNSCacheInfo.validity_period_not_after > time(NULL)){
         printf("Valid Period\n");
@@ -228,7 +228,7 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // SSL_VERIFY_NONE
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
     if(DNS)
-        SSL_CTX_add_custom_ext(ctx, 53, SSL_EXT_CLIENT_HELLO, NULL, NULL,NULL,NULL,NULL);
+        SSL_CTX_add_custom_ext(ctx, 53, SSL_EXT_CLIENT_HELLO, dns_info_add_cb, dns_info_free_cb,NULL, NULL,NULL);
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){
@@ -245,7 +245,7 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
     return len;
 }
 void configure_connection(SSL *ssl){
-    SSL_set_tlsext_host_name(ssl, "youngin.net");
+        SSL_set_tlsext_host_name(ssl, "youngin.net");
     SSL_set_connect_state(ssl);
     if(SSL_do_handshake(ssl) <= 0){
         ERR_print_errors_fp(stderr);
@@ -257,3 +257,35 @@ void error_handling(char *message){
     fputc('\n', stderr);
     exit(1);
 }
+
+static int dns_info_add_cb(SSL *s, unsigned int ext_type,
+                            unsigned int context,
+                            const unsigned char **out,
+                            size_t *outlen, X509 *x, size_t chainidx,
+                            int *al, void *arg)
+                            {
+    out = (const unsigned char**)malloc(sizeof(char*));
+
+    sprintf((char*)*out, "%08X\n", (&dns_info)->DNSCacheInfo.dns_cache_id);
+    printf("out : %s\n", *out);
+
+    outlen = (size_t*)malloc(sizeof(size_t*));
+    *outlen = 1000;
+    printf("outlen: %zu\n", *outlen);
+    return 1;
+}
+
+static void dns_info_free_cb(SSL *s, unsigned int ext_type,
+                     unsigned int context,
+                     const unsigned char *out,
+                     void *add_arg){
+    OPENSSL_free((unsigned char *)out);
+}
+
+static int ext_parse_cb(SSL *s, unsigned int ext_type,
+                        const unsigned char *in,
+                        size_t inlen, int *al, void *parse_arg)
+                        {
+    printf("ext_parse_cb from client called!\n");
+    return 1;
+                        }

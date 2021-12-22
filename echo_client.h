@@ -68,5 +68,18 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
 void configure_connection(SSL *ssl);
 //void ShowCerts(SSL* ssl);
 void error_handling(char *message);
+static int dns_info_add_cb(SSL *s, unsigned int ext_type,
+                    unsigned int context,
+                    const unsigned char **out,
+                    size_t *outlen, X509 *x, size_t chainidx,
+                    int *al, void *arg);
 
+static void dns_info_free_cb(SSL *s, unsigned int ext_type,
+                     unsigned int context,
+                     const unsigned char *out,
+                     void *add_arg);
+
+static int ext_parse_cb(SSL *s, unsigned int ext_type,
+                        const unsigned char *in,
+                        size_t inlen, int *al, void *parse_arg);
 #endif //TLS13_ECHO_ECHO_CLIENT_H
