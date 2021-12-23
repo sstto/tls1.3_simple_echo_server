@@ -268,7 +268,6 @@ static int dns_info_add_cb(SSL *s, unsigned int ext_type,
     if (context == SSL_EXT_CLIENT_HELLO) {
         *out = (unsigned char*)malloc(sizeof(char*)*4);
         memcpy((void*)*out, &(&dns_info)->DNSCacheInfo.dns_cache_id, 4);
-        printf("out : %s\n", *out);
         *outlen = 4;
     }
 
@@ -286,6 +285,5 @@ static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         const unsigned char *in,
                         size_t inlen, int *al, void *parse_arg)
                         {
-    printf("ext_parse_cb from client called!\n");
     return 1;
                         }
