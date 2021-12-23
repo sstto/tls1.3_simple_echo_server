@@ -264,14 +264,14 @@ static int dns_info_add_cb(SSL *s, unsigned int ext_type,
                             size_t *outlen, X509 *x, size_t chainidx,
                             int *al, void *arg)
                             {
-    out = (const unsigned char**)malloc(sizeof(char*));
 
-    sprintf((char*)*out, "%08X\n", (&dns_info)->DNSCacheInfo.dns_cache_id);
-    printf("out : %s\n", *out);
+    if (context == SSL_EXT_CLIENT_HELLO) {
+        *out = (unsigned char*)malloc(sizeof(char*)*4);
+        memcpy((void*)*out, &(&dns_info)->DNSCacheInfo.dns_cache_id, 4);
+        printf("out : %s\n", *out);
+        *outlen = 4;
+    }
 
-    outlen = (size_t*)malloc(sizeof(size_t*));
-    *outlen = 1000;
-    printf("outlen: %zu\n", *outlen);
     return 1;
 }
 
