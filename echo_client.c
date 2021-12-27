@@ -65,14 +65,14 @@ int main(int argc, char *argv[]){
     /*
      * set dns info
      */
-    SSL_use_PrivateKey(ssl, dns_info.skey); // set server's keyshare
+    SSL_use_PrivateKey(ssl, dns_info.KeyShareEntry.skey); // set server's keyshare
     SSL_use_certificate(ssl, dns_info.cert); // set sever's cert
 
     SSL_export_keying_material(ssl, (unsigned char*)msg,
                                0,
                               NULL,
                               0,
-                              dns_info.cert_verify, BUF_SIZE, 0); // cert verify
+                              dns_info.cert_verify_entry.cert_verify, BUF_SIZE, 0); // cert verify
 
     /*
      * handshake start
@@ -118,16 +118,18 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     char dns_cache_info[BUF_SIZE];
     char encrypted_extension[BUF_SIZE];
     char keyshare[BUF_SIZE];
+    char cert_request[BUF_SIZE];
     char cert[BUF_SIZE];
     char cert_verify[BUF_SIZE];
-    char* pos_dns, *pos_ee, *pos_key, *pos_cert, *pos_cert_verify, *pos_end;
-    char *tmp;
+    char* pos_dns, *pos_ee, *pos_key, *pos_cert, *pos_cert_verify, *pos_cert_request, *pos_end;
+    char *tmp, *tmp2;
     int size_ee;
 
     pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
     pos_ee = strstr(msg,"-----BEGIN ENCRYPTED EXTENSIONS-----");
     pos_key = strstr(msg, "-----BEGIN PUBLIC KEY-----");
     pos_cert = strstr(msg, "-----BEGIN CERTIFICATE-----");
+    pos_cert_request = strstr(msg, "-----BEGIN CERTIFICATE REQUEST-----");
     pos_cert_verify = strstr(msg, "-----BEGIN CERTIFICATE VERIFY-----");
     pos_end = strstr(msg, "-----END CERTIFICATE VERIFY-----");
 
@@ -141,7 +143,10 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     keyshare[pos_cert-pos_key] = '\0';
 
     strcpy(cert, pos_cert);
-    cert[pos_cert_verify-pos_cert] = '\0';
+    cert[pos_cert_request-pos_cert] = '\0';
+
+    strcpy(cert_request, pos_cert_request);
+    cert_request[pos_cert_verify - pos_cert_request] = '\0';
 
     strcpy(cert_verify, pos_cert_verify+34);
     cert_verify[pos_end-pos_cert_verify-34] = '\0';
@@ -174,15 +179,30 @@ int load_dns_info(struct DNS_info* dp, char* msg){
         dp->encrypted_extensions.extension_data[i] = strtoul(tmp, NULL, 0);
     }
 
+    tmp = strtok(keyshare, "\n");
+    tmp = strtok(NULL, "\n");
+    dp->KeyShareEntry.group = strtoul(tmp, NULL, 0);
+    tmp = strtok(NULL, "\n");
+    strcat(keyshare, "\n");
+    strcat(keyshare, tmp);
+    tmp = strtok(NULL, "\n");
+    strcat(keyshare, "\n");
+    strcat(keyshare, tmp);
+    printf("tmp2 : %s\n", keyshare);
+
     bio_key = BIO_new(BIO_s_mem());
     BIO_puts(bio_key, keyshare);
-    PEM_read_bio_PUBKEY(bio_key, &(dp->skey), NULL, NULL);
+    PEM_read_bio_PUBKEY(bio_key, &(dp->KeyShareEntry.skey), NULL, NULL);
 
     bio_cert = BIO_new(BIO_s_mem());
     BIO_puts(bio_cert, cert);
     PEM_read_bio_X509(bio_cert, &(dp->cert), NULL, NULL);
 
-    strcpy((char*)dp->cert_verify, cert_verify);
+    tmp = strtok(cert_verify, "\n");
+    dp->cert_verify_entry.signature_algorithms = strtoul(tmp, NULL, 0);
+    tmp = strtok(NULL, "");
+    strcpy((char*)dp->cert_verify_entry.cert_verify, tmp);
+
     return 1;
 }
 
