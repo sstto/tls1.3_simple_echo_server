@@ -35,6 +35,10 @@ int main(int argc, char *argv[]){
 
     SSL_CTX *ctx = create_context();
 
+    if(DNS && dns_info.KeyShareEntry.group == 29){  // keyshare group : 0x001d(X25519)
+        SSL_CTX_set1_groups_list(ctx, "X25519");
+    }
+
     set_context(ctx);
 
     if(argc != 3){
@@ -68,7 +72,8 @@ int main(int argc, char *argv[]){
     SSL_use_PrivateKey(ssl, dns_info.KeyShareEntry.skey); // set server's keyshare
     SSL_use_certificate(ssl, dns_info.cert); // set sever's cert
 
-    SSL_export_keying_material(ssl, (unsigned char*)msg,
+    if(dns_info.cert_verify_entry.signature_algorithms == 2052)     //rsa pss rsae sha256 0x0804
+        SSL_export_keying_material(ssl, (unsigned char*)msg,
                                0,
                               NULL,
                               0,
@@ -117,16 +122,18 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     BIO *bio_key, *bio_cert;
     char dns_cache_info[BUF_SIZE];
     char encrypted_extension[BUF_SIZE];
+    char support_group[BUF_SIZE];
     char keyshare[BUF_SIZE];
     char cert_request[BUF_SIZE];
     char cert[BUF_SIZE];
     char cert_verify[BUF_SIZE];
-    char* pos_dns, *pos_ee, *pos_key, *pos_cert, *pos_cert_verify, *pos_cert_request, *pos_end;
+    char* pos_dns, *pos_ee, *pos_group, *pos_key, *pos_cert, *pos_cert_verify, *pos_cert_request, *pos_end;
     char *tmp, *tmp2;
     int size_ee;
 
     pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
     pos_ee = strstr(msg,"-----BEGIN ENCRYPTED EXTENSIONS-----");
+    pos_group = strstr(msg,"-----BEGIN SUPPORT GROUP-----");
     pos_key = strstr(msg, "-----BEGIN PUBLIC KEY-----");
     pos_cert = strstr(msg, "-----BEGIN CERTIFICATE-----");
     pos_cert_request = strstr(msg, "-----BEGIN CERTIFICATE REQUEST-----");
@@ -137,7 +144,10 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     dns_cache_info[pos_ee-pos_dns] = '\0';
 
     strcpy(encrypted_extension, pos_ee);
-    encrypted_extension[pos_key-pos_ee] = '\0';
+    encrypted_extension[pos_group-pos_ee] = '\0';
+
+    strcpy(support_group, pos_group);
+    encrypted_extension[pos_key-pos_group] = '\0';
 
     strcpy(keyshare, pos_key);
     keyshare[pos_cert-pos_key] = '\0';
@@ -154,9 +164,9 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     // load dns cache info
     tmp = strtok(dns_cache_info, "\n");
     tmp = strtok(NULL, "\n");
-    dp->DNSCacheInfo.validity_period_not_before = strtoull(tmp, NULL,0);
+    dp->DNSCacheInfo.validity_period_not_before = strtoul(tmp, NULL,0);
     tmp = strtok(NULL, "\n");
-    dp->DNSCacheInfo.validity_period_not_after = strtoull(tmp, NULL,0);
+    dp->DNSCacheInfo.validity_period_not_after = strtoul(tmp, NULL,0);
     tmp = strtok(NULL, "\n");
     dp->DNSCacheInfo.dns_cache_id  = strtoul(tmp, NULL, 0);
     // Check timestamp Valid
@@ -164,7 +174,6 @@ int load_dns_info(struct DNS_info* dp, char* msg){
         printf("Valid Period\n");
     }else{
         printf("Not Valid Period\n");
-//        return 0;
     }
     // load encrypted extension
     tmp = strtok(encrypted_extension, "\n");
@@ -179,18 +188,9 @@ int load_dns_info(struct DNS_info* dp, char* msg){
         dp->encrypted_extensions.extension_data[i] = strtoul(tmp, NULL, 0);
     }
 
-    tmp = strtok(keyshare, "\n");
+    tmp = strtok(support_group, "\n");
     tmp = strtok(NULL, "\n");
     dp->KeyShareEntry.group = strtoul(tmp, NULL, 0);
-
-    tmp = strtok(NULL, "\n");
-    strcat(keyshare, "\n");
-    strcat(keyshare, tmp);
-    tmp = strtok(NULL, "\n");
-    strcat(keyshare, "\n");
-    strcat(keyshare, tmp);
-    printf("%s", keyshare);
-
     bio_key = BIO_new(BIO_s_mem());
     BIO_puts(bio_key, keyshare);
     PEM_read_bio_PUBKEY(bio_key, &(dp->KeyShareEntry.skey), NULL, NULL);
@@ -248,10 +248,8 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_load_verify_locations(ctx, "./dns/cert/CarolCert.pem", "./dns/cert/");
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // SSL_VERIFY_NONE
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
-    if(DNS){
+    if(DNS)
         SSL_CTX_add_custom_ext(ctx, 53, SSL_EXT_CLIENT_HELLO, dns_info_add_cb, dns_info_free_cb,NULL, NULL,NULL);
-//        SSL_CTX_set1_groups(ctx, &(dns_info->KeyShareEntry.group), 1);
-    }
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){
@@ -268,7 +266,7 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
     return len;
 }
 void configure_connection(SSL *ssl){
-    SSL_set_tlsext_host_name(ssl, "youngin.net");
+    SSL_set_tlsext_host_name(ssl, "ztls.net");
     SSL_set_connect_state(ssl);
     if(SSL_do_handshake(ssl) <= 0){
         ERR_print_errors_fp(stderr);
@@ -309,10 +307,4 @@ static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         size_t inlen, int *al, void *parse_arg)
                         {
     return 1;
-}
-
-void print_dns_info(struct DNS_info* dns_info){
-    printf("validity_period_not_before : %lu\n", dns_info->DNSCacheInfo.validity_period_not_before);
-    printf("validity_period_not_after : %lu\n", dns_info->DNSCacheInfo.validity_period_not_after);
-    printf("dns_cache id : %u\n", dns_info->DNSCacheInfo.dns_cache_id);
 }

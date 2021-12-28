@@ -33,8 +33,8 @@
 
 struct DNS_info{
     struct {
-        uint64_t validity_period_not_before;
-        uint64_t validity_period_not_after;
+        uint32_t validity_period_not_before; //gmt unix time
+        uint32_t validity_period_not_after;  //gmt unix time
         uint32_t dns_cache_id;
     } DNSCacheInfo;
     struct {
@@ -93,5 +93,4 @@ static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         const unsigned char *in,
                         size_t inlen, int *al, void *parse_arg);
 
-void print_dns_info(struct DNS_info* dns_info);
 #endif //TLS13_ECHO_ECHO_CLIENT_H
