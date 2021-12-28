@@ -72,12 +72,12 @@ int main(int argc, char *argv[]){
     SSL_use_PrivateKey(ssl, dns_info.KeyShareEntry.skey); // set server's keyshare
     SSL_use_certificate(ssl, dns_info.cert); // set sever's cert
 
-    if(dns_info.cert_verify_entry.signature_algorithms == 2052)     //rsa pss rsae sha256 0x0804
+    if(dns_info.CertVerifyEntry.signature_algorithms == 2052)     //rsa pss rsae sha256 0x0804
         SSL_export_keying_material(ssl, (unsigned char*)msg,
                                0,
                               NULL,
                               0,
-                              dns_info.cert_verify_entry.cert_verify, BUF_SIZE, 0); // cert verify
+                              dns_info.CertVerifyEntry.cert_verify, BUF_SIZE, 0); // cert verify
 
     /*
      * handshake start
@@ -182,15 +182,16 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     tmp = strtok(encrypted_extension, "\n");
     tmp = strtok(NULL, "\n");
     size_ee = strtoul(tmp, NULL, 0);
-    dp->encrypted_extensions.extension_type = malloc(sizeof(uint8_t)*size_ee);
-    dp->encrypted_extensions.extension_data = malloc(sizeof(uint16_t)*size_ee);
+    dp->EncryptedExtensions.extension_type = malloc(sizeof(uint8_t)*size_ee);
+    dp->EncryptedExtensions.extension_data = malloc(sizeof(uint16_t)*size_ee);
     for(int i=0;i<=size_ee;i++){
         tmp = strtok(NULL, "\n");
-        dp->encrypted_extensions.extension_type[i] = (uint8_t)strtoul(tmp, NULL, 0);
+        dp->EncryptedExtensions.extension_type[i] = (uint8_t)strtoul(tmp, NULL, 0);
         tmp = strtok(NULL, "\n");
-        dp->encrypted_extensions.extension_data[i] = strtoul(tmp, NULL, 0);
+        dp->EncryptedExtensions.extension_data[i] = strtoul(tmp, NULL, 0);
     }
 
+    // load keyshare entry
     tmp = strtok(support_group, "\n");
     tmp = strtok(NULL, "\n");
     dp->KeyShareEntry.group = strtoul(tmp, NULL, 0);
@@ -203,9 +204,9 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     PEM_read_bio_X509(bio_cert, &(dp->cert), NULL, NULL);
 
     tmp = strtok(cert_verify, "\n");
-    dp->cert_verify_entry.signature_algorithms = strtoul(tmp, NULL, 0);
+    dp->CertVerifyEntry.signature_algorithms = strtoul(tmp, NULL, 0);
     tmp = strtok(NULL, "");
-    strcpy((char*)dp->cert_verify_entry.cert_verify, tmp);
+    strcpy((char*)dp->CertVerifyEntry.cert_verify, tmp);
 
     return 1;
 }

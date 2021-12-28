@@ -41,7 +41,7 @@ struct DNS_info{
     struct {
         uint8_t *extension_type;
         uint16_t *extension_data;
-    } encrypted_extensions;
+    } EncryptedExtensions;
     struct {
         uint8_t group;
         EVP_PKEY *skey; // server's keyshare
@@ -50,11 +50,11 @@ struct DNS_info{
     struct {
         uint8_t certificate_request_context;
         uint16_t extensions;
-    } cert_request;
+    } CertRequest;
     struct {
         uint16_t signature_algorithms;
         unsigned char cert_verify[BUF_SIZE]; // signature
-    } cert_verify_entry;
+    } CertVerifyEntry;
 } dns_info;
 
 
