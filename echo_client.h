@@ -92,4 +92,6 @@ static void dns_info_free_cb(SSL *s, unsigned int ext_type,
 static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         const unsigned char *in,
                         size_t inlen, int *al, void *parse_arg);
+
+void print_dns_info(struct DNS_info* dns_info);
 #endif //TLS13_ECHO_ECHO_CLIENT_H

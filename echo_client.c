@@ -182,13 +182,14 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     tmp = strtok(keyshare, "\n");
     tmp = strtok(NULL, "\n");
     dp->KeyShareEntry.group = strtoul(tmp, NULL, 0);
+
     tmp = strtok(NULL, "\n");
     strcat(keyshare, "\n");
     strcat(keyshare, tmp);
     tmp = strtok(NULL, "\n");
     strcat(keyshare, "\n");
     strcat(keyshare, tmp);
-    printf("tmp2 : %s\n", keyshare);
+    printf("%s", keyshare);
 
     bio_key = BIO_new(BIO_s_mem());
     BIO_puts(bio_key, keyshare);
@@ -247,8 +248,10 @@ void set_context(SSL_CTX *ctx){
     SSL_CTX_load_verify_locations(ctx, "./dns/cert/CarolCert.pem", "./dns/cert/");
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // SSL_VERIFY_NONE
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
-    if(DNS)
+    if(DNS){
         SSL_CTX_add_custom_ext(ctx, 53, SSL_EXT_CLIENT_HELLO, dns_info_add_cb, dns_info_free_cb,NULL, NULL,NULL);
+//        SSL_CTX_set1_groups(ctx, &(dns_info->KeyShareEntry.group), 1);
+    }
     SSL_CTX_set_keylog_callback(ctx, keylog_callback);
 }
 void keylog_callback(const SSL* ssl, const char *line){
@@ -265,7 +268,7 @@ size_t resolve_hostname(const char *host, const char *port, struct sockaddr_stor
     return len;
 }
 void configure_connection(SSL *ssl){
-        SSL_set_tlsext_host_name(ssl, "youngin.net");
+    SSL_set_tlsext_host_name(ssl, "youngin.net");
     SSL_set_connect_state(ssl);
     if(SSL_do_handshake(ssl) <= 0){
         ERR_print_errors_fp(stderr);
@@ -306,4 +309,10 @@ static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         size_t inlen, int *al, void *parse_arg)
                         {
     return 1;
-                        }
+}
+
+void print_dns_info(struct DNS_info* dns_info){
+    printf("validity_period_not_before : %lu\n", dns_info->DNSCacheInfo.validity_period_not_before);
+    printf("validity_period_not_after : %lu\n", dns_info->DNSCacheInfo.validity_period_not_after);
+    printf("dns_cache id : %u\n", dns_info->DNSCacheInfo.dns_cache_id);
+}
