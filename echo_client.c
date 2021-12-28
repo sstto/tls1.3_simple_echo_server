@@ -130,6 +130,8 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     char* pos_dns, *pos_ee, *pos_group, *pos_key, *pos_cert, *pos_cert_verify, *pos_cert_request, *pos_end;
     char *tmp, *tmp2;
     int size_ee;
+    struct tm *dns_tm;
+
 
     pos_dns = strstr(msg, "-----BEGIN DNS CACHE-----");
     pos_ee = strstr(msg,"-----BEGIN ENCRYPTED EXTENSIONS-----");
@@ -164,11 +166,12 @@ int load_dns_info(struct DNS_info* dp, char* msg){
     // load dns cache info
     tmp = strtok(dns_cache_info, "\n");
     tmp = strtok(NULL, "\n");
-    dp->DNSCacheInfo.validity_period_not_before = strtoul(tmp, NULL,0);
+    dp->DNSCacheInfo.validity_period_not_before = is_datetime(tmp);
     tmp = strtok(NULL, "\n");
-    dp->DNSCacheInfo.validity_period_not_after = strtoul(tmp, NULL,0);
+    dp->DNSCacheInfo.validity_period_not_after = is_datetime(tmp);
     tmp = strtok(NULL, "\n");
     dp->DNSCacheInfo.dns_cache_id  = strtoul(tmp, NULL, 0);
+
     // Check timestamp Valid
     if(dp->DNSCacheInfo.validity_period_not_before < time(NULL) && dp->DNSCacheInfo.validity_period_not_after > time(NULL)){
         printf("Valid Period\n");
@@ -307,4 +310,13 @@ static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         size_t inlen, int *al, void *parse_arg)
                         {
     return 1;
+}
+
+time_t is_datetime(const char *datetime){
+    // datetime format is YYYYMMDDHHMMSSz
+    struct tm   time_val;
+
+    strptime(datetime, "%Y%m%d%H%M%Sz", &time_val);
+
+    return mktime(&time_val);       // Invalid
 }

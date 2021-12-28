@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 //#include <openssl/rsa.h>
 //#include <openssl/crypto.h>
 //#include <openssl/pem.h>
@@ -33,8 +34,8 @@
 
 struct DNS_info{
     struct {
-        uint32_t validity_period_not_before; //gmt unix time
-        uint32_t validity_period_not_after;  //gmt unix time
+        time_t validity_period_not_before; //gmt unix time
+        time_t validity_period_not_after;  //gmt unix time
         uint32_t dns_cache_id;
     } DNSCacheInfo;
     struct {
@@ -92,5 +93,5 @@ static void dns_info_free_cb(SSL *s, unsigned int ext_type,
 static int ext_parse_cb(SSL *s, unsigned int ext_type,
                         const unsigned char *in,
                         size_t inlen, int *al, void *parse_arg);
-
+time_t is_datetime(const char *datetime);
 #endif //TLS13_ECHO_ECHO_CLIENT_H
