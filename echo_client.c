@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 
     if(DNS && dns_info.KeyShareEntry.group == 29){  // keyshare group : 0x001d(X25519)
         SSL_CTX_set1_groups_list(ctx, "X25519");
-    }
+    } // for demo, we will add other groups later.
 
     set_context(ctx);
 

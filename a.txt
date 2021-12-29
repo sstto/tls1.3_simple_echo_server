@@ -1,0 +1,26 @@
+Listening on port 9190
+new client connected ...
+==============================================
+start do handshake reduce
+==============================================
+state_machine reduce start 
+st->state : MSG_FLOW_UNINITED
+st->state : MSG_FLOW_WRITING.
+st->state : MSG_FLOW_READING.
+    (READ) hand_state -> SSLv3/TLS read client hello
+[12:05:36.651] | <tls_post_process_client_hello_reduce:3159> fix the server's ecdhe keyshare
+    (READ) hand_state -> TLS_ST_SR_DNS_FINISHED_APPLICATION
+[12:05:36.652] | <tls_process_finished:1085> Client->Server DNS application data
+buf : hello
+ssret is SUB_STATE_FINISHED.
+st->state : MSG_FLOW_WRITING.
+    (WRITE) hand_state -> SSLv3/TLS write server hello
+    (WRITE) hand_state -> SSLv3/TLS write change cipher spec
+    (WRITE) hand_state -> TLSv1.3 write encrypted extensions
+    (WRITE) hand_state -> SSLv3/TLS write certificate
+    (WRITE) hand_state -> TLSv1.3 write server certificate verify
+    (WRITE) hand_state -> SSLv3/TLS write finished
+sending application data from server to client : mmlab
+finsisisisis
+st->state : MSG_FLOW_READING.
+ssret is not SUB_STATE_FINISHED.
