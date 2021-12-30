@@ -1,5 +1,5 @@
 #include "echo_client.h"
-int DNS = 1;
+int DNS = 0;
 
 int main(int argc, char *argv[]){
     char msg[BUF_SIZE];
@@ -54,6 +54,11 @@ int main(int argc, char *argv[]){
     struct sockaddr_storage addr;
     size_t len = resolve_hostname(argv[1], argv[2], &addr);
 
+    // log
+    struct timespec begin;
+    clock_gettime(CLOCK_MONOTONIC, &begin);
+    printf("start : %f\n",(begin.tv_sec) + (begin.tv_nsec) / 1000000000.0);
+
     if(connect(sock, (struct sockaddr*) &addr, len) < 0){
         error_handling("connect() error!");
     }else{
@@ -85,7 +90,22 @@ int main(int argc, char *argv[]){
     configure_connection(ssl);
     char message[BUF_SIZE];
     int str_len;
+    struct timespec send_ctos, receive_ctos;
 
+    if(!DNS){
+        memcpy(message, "hello\n", 6);
+        SSL_write(ssl, message, strlen(message));
+        clock_gettime(CLOCK_MONOTONIC, &send_ctos);
+        printf("send : %s", message);
+        printf("%f\n",(send_ctos.tv_sec) + (send_ctos.tv_nsec) / 1000000000.0);
+        message[str_len] = 0;
+        if((str_len = SSL_read(ssl, message, BUF_SIZE-1))<=0){
+            printf("error\n");
+        }
+        clock_gettime(CLOCK_MONOTONIC, &receive_ctos);
+        printf("Message from server: %s", message);
+        printf("%f\n",(receive_ctos.tv_sec) + (receive_ctos.tv_nsec) / 1000000000.0);
+    }
 
     while(1){
         fputs("Input message(Q to quit): ", stdout);
@@ -96,6 +116,8 @@ int main(int argc, char *argv[]){
         }
 
         SSL_write(ssl, message, strlen(message));
+        clock_gettime(CLOCK_MONOTONIC, &send_ctos);
+        printf("%f\n",(send_ctos.tv_sec) + (send_ctos.tv_nsec) / 1000000000.0);
         if((str_len = SSL_read(ssl, message, BUF_SIZE-1))<=0){
         	printf("error\n");
         }

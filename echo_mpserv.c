@@ -18,6 +18,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in clnt_adr;
     int str_len;
     char buf[BUF_SIZE];
+
     while(1){
         socklen_t adr_sz = sizeof(clnt_adr);
         clnt_sock = accept(serv_sock, (struct sockaddr*) &clnt_adr, &adr_sz);
@@ -47,9 +48,10 @@ int main(int argc, char *argv[]){
             close(serv_sock);
             while((str_len = SSL_read(ssl,buf, BUF_SIZE)) != 0){
                 // str_len은 read한 byte 수
+
                 printf("buf : %s", buf);
                 if(!strncmp(buf, "hello\n",str_len)){
-                    strcpy(buf, "worldisforyou\n");
+                    strcpy(buf, "Nice to have\n");
                     SSL_write(ssl, buf, strlen(buf));
                 }else{
                     SSL_write(ssl, buf, str_len);
@@ -115,8 +117,6 @@ int create_listen(int port){
     int serv_sock;
     struct sockaddr_in serv_adr;
     struct sigaction act;
-
-
 
     // sigaction : signal이 발생할 때 act할 함수가 들어있는 구조체 생성 함수;
     act.sa_handler = read_childproc;
