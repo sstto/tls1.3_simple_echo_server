@@ -1,6 +1,8 @@
 # tls-multi-echo-server
 > Implement a TLS 1.3 multi echo server using openssl
-
+> In echo_client.c, there is a variable named DNS.
+> If DNS = 0, implement TLS 1.3.
+> else, implement ZTLS.
 # Compile
 > gcc -o server echo_mpserv.c -lssl -lcrypto
 
