@@ -1,5 +1,5 @@
 #include "echo_client.h"
-int DNS = 0;
+int DNS = 1;
 
 int main(int argc, char *argv[]){
     char msg[BUF_SIZE];
@@ -69,21 +69,22 @@ int main(int argc, char *argv[]){
     SSL_set_fd(ssl, sock);
 
     SSL_set_wfd(ssl, DNS); // fd : 1 => ZTLS, fd : 0 => TLS 1.3
-    SSL_set_max_early_data(ssl, (&dns_info)->DNSCacheInfo.dns_cache_id); // set dns id
+    if(DNS){
+        SSL_set_max_early_data(ssl, (&dns_info)->DNSCacheInfo.dns_cache_id); // set dns id
 
-    /*
-     * set dns info
-     */
-    SSL_use_PrivateKey(ssl, dns_info.KeyShareEntry.skey); // set server's keyshare
-    SSL_use_certificate(ssl, dns_info.cert); // set sever's cert
+        /*
+         * set dns info
+         */
+        SSL_use_PrivateKey(ssl, dns_info.KeyShareEntry.skey); // set server's keyshare
+        SSL_use_certificate(ssl, dns_info.cert); // set sever's cert
+        if(dns_info.CertVerifyEntry.signature_algorithms == 2052)     //rsa pss rsae sha256 0x0804
+            SSL_export_keying_material(ssl, (unsigned char*)msg,
+                                       0,
+                                       NULL,
+                                       0,
+                                       dns_info.CertVerifyEntry.cert_verify, BUF_SIZE, 0); // cert verify
 
-    if(dns_info.CertVerifyEntry.signature_algorithms == 2052)     //rsa pss rsae sha256 0x0804
-        SSL_export_keying_material(ssl, (unsigned char*)msg,
-                               0,
-                              NULL,
-                              0,
-                              dns_info.CertVerifyEntry.cert_verify, BUF_SIZE, 0); // cert verify
-
+    }
     /*
      * handshake start
      */
