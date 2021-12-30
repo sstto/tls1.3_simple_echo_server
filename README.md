@@ -13,3 +13,8 @@
 
 
 > ./client ip port
+
+# Easy to implement
+> clear; make clean;make server;./server port
+
+> clear; make clean;make client;./client ip port
