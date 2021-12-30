@@ -18,3 +18,8 @@
 > clear; make clean;make server;./server port
 
 > clear; make clean;make client;./client ip port
+
+# TroubleShooting
+
+1. add environment variables
+export LD_LIBRARY_PATH=/usr/local/lib
